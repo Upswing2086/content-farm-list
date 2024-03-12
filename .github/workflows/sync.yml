@@ -1,0 +1,39 @@
+name: Merge Rules
+
+on:
+  schedule:
+    - cron: "0 23 * * *" # 每天早上7点触发
+  workflow_dispatch:
+  push:
+
+jobs:
+  merge_rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clear the *.txt
+        run: |
+          echo "" > uBlacklist.txt
+
+      - name: Merge rules
+        run: |
+          curl -L https://raw.githubusercontent.com/Upswing2086/content-farm-list/main/base_uBlacklist.txt >> uBlacklist.txt
+          curl -L https://raw.githubusercontent.com/wdmpa/content-farm-list/main/uBlacklist.txt >> uBlacklist.txt
+
+      - name: Sync cncidr.txt
+        run: |
+          sort -u uBlacklist.txt -o uBlacklist.txt
+          sed -i '/^$/d' uBlacklist.txt # Remove empty lines from uBlacklist.
+
+
+      - name: Commit and push changes
+        uses: fregante/setup-git-user@v2
+      - run: |
+          git init
+          git checkout -b release
+          git add uBlacklist.txt
+          git commit -m "Merge rules"
+          git push -f -u origin release
